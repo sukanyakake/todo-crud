@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %} Update Your  Todo {% endblock title %}
+{% block body %}
+ 
+    <div class="container-fluid">
+        <h1>Update todo</h1>
+      <form  action="/update/{{todo.sno}}" method="POST" class="row d-flex flex-column g-3">
+        <div class="col-auto">
+          <label for="title" class="">Todo Title</label>
+          <input type="text" class="form-control" value="{{todo.title}}" name="title" id="title" />
+        </div>
+        <div class="col-auto">
+          <label for="desc"  class="">Todo Description</label>
+          <input
+          value="{{todo.desc}}"
+          name="desc"
+            type="text"
+            class="form-control"
+            id="desc"
+          />
+        </div>
+        <div class="col-auto">
+          <button type="submit" class="btn btn-primary mb-3">Update</button>
+        </div>
+      </form>
+    </div>
+
+{% endblock body %}

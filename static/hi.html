@@ -1,0 +1,981 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Priority Email - Full UI/UX</title>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* --- CSS VARIABLES --- */
+        :root {
+            --color-dark-bg: #0d1117;
+            --color-card-bg: #161b22;
+            --color-card-secondary: #1F2937;
+            --color-text-light: #F9FAFB;
+            --color-text-muted: #9CA3AF;
+            --color-primary-accent: #58a6ff;
+            --color-high-priority: #EF4444; /* Red */
+            --color-medium-priority: #F59E0B; /* Amber */
+            --color-low-priority: #10B981; /* Emerald */
+            --border-color-gray: #30363d;
+            --color-subtle-pulse: rgba(239, 68, 68, 0.2);
+            --color-primary-light: #89b4f8;
+            --color-reading-contrast: #111827; /* NEW: Slightly lighter for modal body contrast */
+        }
+
+        /* --- BASE STYLES --- */
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: var(--color-dark-bg);
+            color: var(--color-text-light);
+            margin: 0;
+            min-height: 100vh;
+        }
+        
+        /* --- LOGIN SCREEN STYLES (Screen 1) --- */
+        #login-screen {
+            display: flex; /* Initially set to flex for centering */
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .login-container {
+            background-color: var(--color-card-bg);
+            border: 1px solid var(--border-color-gray);
+            border-radius: 12px;
+            padding: 40px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+        .login-header {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 30px;
+            color: var(--color-primary-accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            font-size: 14px;
+            color: var(--color-text-muted);
+        }
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            background-color: var(--color-dark-bg);
+            border: 1px solid var(--border-color-gray);
+            border-radius: 6px;
+            color: var(--color-text-light);
+            box-sizing: border-box;
+            transition: border-color 0.2s;
+        }
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--color-primary-accent);
+            box-shadow: 0 0 0 2px rgba(88, 166, 255, 0.2);
+        }
+        .btn-login {
+            width: 100%;
+            padding: 12px;
+            background-color: #238636;
+            color: #ffffff;
+            font-size: 16px;
+            font-weight: bold;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.2s, box-shadow 0.2s;
+        }
+        .btn-login:hover {
+            background-color: #2ea043;
+            box-shadow: 0 4px 10px rgba(46, 160, 67, 0.4);
+        }
+
+        /* --- DASHBOARD STYLES (Screen 2) --- */
+        #dashboard-screen {
+            display: none; /* Hidden until login succeeds */
+            padding: 0 2rem 2rem 2rem;
+        }
+        .max-w-7xl { max-width: 1280px; margin-left: auto; margin-right: auto; }
+        
+        /* --- HEADER & NAVBAR --- */
+        .header-section { 
+            background-color: var(--color-card-secondary);
+            padding: 1rem 2rem;
+            margin: 0 -2rem; /* Extend full width */
+            border-bottom: 1px solid var(--border-color-gray);
+            margin-bottom: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header-left {
+            display: flex;
+            align-items: center;
+        }
+        .header-title { font-size: 1.75rem; font-weight: 800; display: flex; align-items: center; color: var(--color-primary-accent); margin-right: 2rem; }
+        .header-status { 
+            padding: 0.5rem; 
+            background-color: var(--color-dark-bg); 
+            border: 1px solid var(--border-color-gray); 
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            margin-left: 1rem;
+        }
+        .text-live { color: var(--color-low-priority); font-weight: bold; }
+
+        /* Navbar Tabs */
+        .navbar { display: flex; align-items: center; gap: 0.5rem; }
+        .nav-tab {
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            color: var(--color-text-muted);
+            position: relative;
+        }
+        .nav-tab:hover { background-color: rgba(90, 166, 255, 0.1); }
+        .nav-tab.active { 
+            background-color: var(--color-dark-bg); 
+            color: var(--color-text-light);
+            border: 1px solid var(--border-color-gray);
+        }
+        .tab-count { margin-left: 0.5rem; font-weight: 400; }
+        .realtime-bell { color: var(--color-high-priority); animation: pulse-red 1.5s infinite; }
+        @keyframes pulse-red { 0% { opacity: 0.6; } 50% { opacity: 1; } 100% { opacity: 0.6; } }
+
+        /* --- LAYOUT GRID --- */
+        .grid-layout { display: grid; grid-template-columns: 1fr; gap: 1.5rem; }
+        @media (min-width: 1024px) {
+            .grid-layout { grid-template-columns: 0.8fr 2.2fr; }
+            .sticky-aside { position: sticky; top: 1rem; height: fit-content; }
+        }
+
+        /* --- SIDEBAR (Reminders/Quick Actions) --- */
+        .aside-card { 
+            padding: 1rem; 
+            background-color: var(--color-card-secondary); 
+            border-radius: 0.75rem; 
+            border: 1px solid var(--border-color-gray);
+        }
+        .aside-title { 
+            font-size: 1.25rem; 
+            font-weight: bold; 
+            color: var(--color-high-priority); /* MODIFICATION: Use Red for urgency */
+            border-bottom: 1px solid var(--border-color-gray); 
+            padding-bottom: 0.5rem; 
+            margin-bottom: 1rem;
+            display: flex; align-items: center;
+        }
+        .quick-action-btn {
+            display: flex; align-items: center; justify-content: center;
+            padding: 0.75rem; border-radius: 0.5rem;
+            background-color: var(--color-card-bg);
+            border: 1px solid var(--border-color-gray);
+            color: var(--color-text-light);
+            cursor: pointer; transition: background-color 0.2s;
+            font-size: 0.875rem; font-weight: 600;
+        }
+        .quick-action-btn:hover { background-color: #2D3748; }
+
+        .reminder-card { 
+            padding: 0.75rem; 
+            border-left: 4px solid var(--color-high-priority); 
+            background-color: rgba(239, 68, 68, 0.1); /* Red tint */
+            border-radius: 0.375rem;
+            position: relative;
+        }
+        .explainability-tag { 
+            font-size: 0.65rem; 
+            color: var(--color-high-priority); 
+            background-color: var(--color-card-secondary); 
+            padding: 2px 6px; 
+            border-radius: 4px; 
+            margin-top: 5px; 
+            display: inline-block;
+        }
+
+        /* --- MAIN CONTENT (VIEW SWITCHER) --- */
+        .inbox-header { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            margin-bottom: 1.5rem; 
+            padding: 0.75rem;
+            background-color: var(--color-card-secondary);
+            border-radius: 0.75rem;
+            border: 1px solid var(--border-color-gray);
+        }
+        .inbox-title { font-size: 1.5rem; font-weight: bold; color: var(--color-text-light); }
+        .view-content { padding-top: 0.5rem; }
+        .email-list { display: flex; flex-direction: column; gap: 0.75rem; }
+        
+        /* --- HIGH PRIORITY (Escalation Pulse) --- */
+        .escalation-pulse {
+            animation: pulse-high 2s infinite;
+        }
+        @keyframes pulse-high {
+            0% { box-shadow: 0 0 0 0 var(--color-subtle-pulse); }
+            70% { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+        .urgency-ribbon {
+            font-size: 0.7rem; color: var(--color-high-priority); font-weight: bold; margin-bottom: 5px;
+            display: flex; align-items: center;
+        }
+
+        /* --- EMAIL CARD BASE --- */
+        .email-card { 
+            padding: 1.25rem; 
+            background-color: var(--color-card-secondary); 
+            border-radius: 0.75rem; 
+            transition: background-color 0.3s; 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            cursor: pointer;
+            border-left: 5px solid transparent;
+        }
+        .email-card:hover { background-color: #2D3748; }
+        .border-red { border-left-color: var(--color-high-priority); }
+        .border-amber { border-left-color: var(--color-medium-priority); }
+        .border-emerald { border-left-color: var(--color-low-priority); }
+
+        .email-content-grid { 
+            display: grid; 
+            grid-template-columns: 1fr;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        /* MODIFICATION: Adjust column sizing for better alignment */
+        @media (min-width: 640px) {
+            .email-content-grid { grid-template-columns: 0.20fr 1fr 0.45fr; }
+        }
+
+        /* ... [Pill and Text styles remain the same] ... */
+        .priority-pill { padding: 0.25rem 0.75rem; font-size: 0.75rem; font-weight: bold; border-radius: 9999px; display: flex; align-items: center; justify-content: center; width: fit-content; }
+        .priority-high { background-color: var(--color-high-priority); color: var(--color-text-light); }
+        .priority-medium { background-color: var(--color-medium-priority); color: #1F2937; }
+        .priority-low { background-color: var(--color-low-priority); color: #1F2937; }
+        .text-subject { font-size: 1.125rem; font-weight: 600; color: var(--color-text-light); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .text-sender { font-size: 0.875rem; color: var(--color-text-muted); font-weight: 500; }
+        .text-summary { font-size: 0.875rem; color: var(--color-text-light); margin-top: 5px; }
+        /* ... [Action and Modal styles remain the same] ... */
+        .icon-small { width: 1rem; height: 1rem; margin-right: 0.25rem; }
+        .icon-xsmall { width: 0.75rem; height: 0.75rem; margin-right: 0.25rem; }
+
+
+        /* --- NEW MODAL STYLES --- */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7); 
+            backdrop-filter: blur(6px); /* BLUR EFFECT */
+            display: none; 
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0; 
+            transition: opacity 0.3s ease;
+        }
+        .modal-overlay.active {
+            display: flex;
+            opacity: 1;
+        }
+
+        .modal-content-large { 
+            /* TARGET: Half Width, Half Height */
+            width: 50vw; /* 50% of viewport width */
+            max-width: 900px; 
+            height: 50vh; /* 50% of viewport height */
+            max-height: 90vh; /* Keeps max limit in case 50vh is too small */
+            
+            background-color: var(--color-card-secondary);
+            border-radius: 1rem; /* Rounded Corners */
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.7); /* Strong Shadow */
+            transform: scale(0.95); /* Scale for transition */
+            transition: transform 0.3s ease;
+            display: flex; 
+            flex-direction: column;
+        }
+        .modal-overlay.active .modal-content-large {
+            transform: scale(1);
+        }
+
+        .modal-header {
+            padding: 1.5rem 1.5rem 0.5rem 1.5rem;
+            /* MODIFICATION: X Symbol Position */
+            display: flex; 
+            justify-content: space-between; 
+            align-items: flex-start;
+        }
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--color-text-light); /* Ensures visibility against dark background */
+            cursor: pointer;
+            padding: 8px; /* Larger clickable area */
+            margin: -8px; /* Pulls it into the corner neatly */
+            transition: color 0.2s;
+        }
+        .modal-close:hover {
+            color: var(--color-high-priority); /* High contrast hover */
+        }
+        
+        @media (max-width: 768px) {
+            .modal-content-large { 
+                width: 95%; 
+                height: 80vh; /* Maintain better mobile usability */
+            }
+        }
+
+        .modal-body-scroll-area {
+            flex-grow: 1; 
+            overflow-y: auto; 
+        }
+
+        /* Updated to single column */
+        .modal-context-grid { 
+            display: grid; 
+            grid-template-columns: 1fr; 
+            gap: 1.5rem;
+            padding: 0 1.5rem;
+            padding-bottom: 2rem; /* Add bottom padding for better scroll viewing */
+        }
+        
+        .summary-block {
+            background-color: rgba(88, 166, 255, 0.1); /* Subtle blue tint */
+            border: 1px solid var(--color-primary-accent);
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            margin: 0.5rem 1.5rem 1rem 1.5rem; /* Separated from header/body */
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+        
+        /* MODIFICATION: High Contrast Reading Area */
+        .modal-body-content {
+            background-color: var(--color-reading-contrast); /* New Contrast BG */
+            padding: 1rem;
+            border-radius: 0.5rem;
+            white-space: pre-wrap; /* Preserves line breaks from raw email */
+            font-size: 1rem;
+            line-height: 1.5;
+        }
+
+        .explanation-panel {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            background-color: var(--color-dark-bg);
+            border: 1px solid var(--border-color-gray);
+            border-radius: 0.5rem;
+            font-size: 0.85rem;
+            color: var(--color-text-muted);
+            margin-bottom: 0;
+        }
+        .explanation-panel strong { color: var(--color-primary-light); }
+
+        .action-bar-footer {
+            position: sticky; /* STICKY FOOTER */
+            bottom: 0;
+            background-color: var(--color-card-secondary); 
+            border-top: 1px solid var(--border-color-gray);
+            padding: 1rem 1.5rem;
+            z-index: 10;
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.75rem;
+        }
+        .smart-action-btn {
+            padding: 0.75rem 1.25rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            display: flex;
+            align-items: center;
+            transition: opacity 0.2s, background-color 0.2s;
+            position: relative; /* For Reclassify Menu */
+        }
+        .smart-action-btn:hover { opacity: 0.9; }
+        .btn-reply { background-color: var(--color-primary-accent); color: white; }
+        .btn-done { background-color: var(--color-high-priority); color: white; }
+        .btn-snooze { background-color: var(--color-card-bg); color: var(--color-text-light); border: 1px solid var(--border-color-gray); }
+        .btn-reclassify { background-color: var(--color-card-bg); color: var(--color-text-muted); border: 1px solid var(--border-color-gray); }
+
+        /* Reclassify Menu Styles */
+        .reclassify-menu {
+            position: absolute;
+            bottom: 100%;
+            right: 0;
+            background-color: var(--color-card-bg);
+            border: 1px solid var(--border-color-gray);
+            border-radius: 6px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+            z-index: 20;
+            min-width: 150px;
+            padding: 5px 0;
+            display: none; 
+        }
+        .reclassify-menu button {
+            width: 100%;
+            text-align: left;
+            padding: 10px 15px;
+            background: none;
+            border: none;
+            color: var(--color-text-light);
+            cursor: pointer;
+            font-size: 0.9rem;
+            display: flex; align-items: center;
+        }
+        .reclassify-menu button:hover {
+            background-color: rgba(88, 166, 255, 0.1);
+            color: var(--color-primary-accent);
+        }
+        .reclassify-menu button .dot {
+            width: 8px; height: 8px; border-radius: 50%; margin-right: 8px;
+        }
+        .dot-high { background-color: var(--color-high-priority); }
+        .dot-medium { background-color: var(--color-medium-priority); }
+        .dot-low { background-color: var(--color-low-priority); }
+
+
+        /* Animation for dynamic feedback */
+        .fade-out {
+            opacity: 0;
+            transform: translateY(10px);
+            transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- SCREEN 1: LOGIN UI -->
+    <div id="login-screen">
+        <div class="login-container">
+            <div class="login-header">
+                <span data-lucide="zap" style="width: 24px; height: 24px; margin-right: 10px;"></span>
+                ActionFirst Inbox
+            </div>
+            <p style="color: var(--color-text-muted); margin-bottom: 30px;">Sign in to access your classified inbox</p>
+            <form id="login-form">
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" name="email" value="user@example.com" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" value="password" required>
+                </div>
+                <button type="submit" class="btn-login">Secure Login</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- SCREEN 2: DASHBOARD UI -->
+    <div id="dashboard-screen">
+        <header class="header-section">
+            <div class="header-left">
+                <h1 class="header-title">
+                    <span data-lucide="zap" class="icon-small"></span>
+                    AI Email Dashboard
+                </h1>
+                <nav class="navbar">
+                    <div class="nav-tab active" data-priority="All" onclick="filterView('All')">All <span class="tab-count" id="count-All"></span></div>
+                    <div class="nav-tab" data-priority="High" onclick="filterView('High')">High <span class="tab-count" id="count-High"></span></div>
+                    <div class="nav-tab" data-priority="Medium" onclick="filterView('Medium')">Medium <span class="tab-count" id="count-Medium"></span></div>
+                    <div class="nav-tab" data-priority="Low" onclick="filterView('Low')">Low <span class="tab-count" id="count-Low"></span></div>
+                    <div class="nav-tab" data-priority="Insights" onclick="filterView('Insights')">Insights</div>
+                </nav>
+            </div>
+            <div class="header-status">
+                <span data-lucide="bell" class="icon-small realtime-bell" style="margin-right: 5px;"></span>
+                Model Status: <strong class="text-live">Live</strong> | <span id="email-count"></span> items
+            </div>
+        </header>
+
+        <div id="app" class="max-w-7xl">
+            <div class="grid-layout">
+                
+                <!-- Sidebar / High Priority Quick Actions -->
+                <aside class="aside-card sticky-aside" id="high-priority-sidebar">
+                    <h2 class="aside-title">
+                        <span data-lucide="bell" class="icon-small"></span>
+                        High Priority Actions
+                    </h2>
+                    <div id="quick-action-btns" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem; margin-bottom: 1rem;">
+                        <button class="quick-action-btn" onclick="alert('Quick Reply drafted!');"><span data-lucide="send" class="icon-xsmall"></span> Reply</button>
+                        <button class="quick-action-btn" onclick="alert('Delegation workflow started!');"><span data-lucide="user-plus" class="icon-xsmall"></span> Delegate</button>
+                        <button class="quick-action-btn" onclick="alert('Added to calendar!');"><span data-lucide="calendar" class="icon-xsmall"></span> Calendar</button>
+                        <button class="quick-action-btn" style="background-color: var(--color-high-priority);" onclick="alert('All Reminders marked done!');">Mark Done</button>
+                    </div>
+                    <div id="reminder-list" class="aside-content">
+                        <!-- Reminder Cards rendered here by JS -->
+                    </div>
+                </aside>
+
+                <!-- MAIN CONTENT VIEW -->
+                <main>
+                    <div id="main-content" class="view-content">
+                        <!-- Content rendered based on selected tab -->
+                    </div>
+                </main>
+            </div>
+        </div>
+    </div>
+
+    <!-- EMAIL DETAIL MODAL (Refactored to include Context and Actions) -->
+    <div id="email-modal" class="modal-overlay" onclick="closeModal(event)">
+        <div class="modal-content-wrapper" style="width: 100%;">
+            <div id="modal-content" class="modal-content-large" onclick="event.stopPropagation()">
+                
+                <!-- Header: Subject, Sender, Close Button -->
+                <div class="modal-header">
+                    <div>
+                        <h3 id="modal-subject" class="modal-subject"></h3>
+                        <p id="modal-sender" class="modal-sender"></p>
+                    </div>
+                    <!-- Close button is now a styled modal-close class -->
+                    <button onclick="document.getElementById('email-modal').classList.remove('active');" class="modal-close">
+                        <span data-lucide="x" class="icon-small"></span>
+                    </button>
+                </div>
+
+                <!-- AI Summary Block -->
+                <div id="modal-ai-summary" class="summary-block">
+                    <!-- AI Summary will be inserted here -->
+                </div>
+
+                <!-- Scrollable Body Content -->
+                <div class="modal-body-scroll-area">
+                    <div class="modal-context-grid">
+                        
+                        <!-- Left Column: Email Body & Explainability -->
+                        <div id="modal-left-column">
+                            <div class="modal-body-wrapper">
+                                <div id="modal-body" class="modal-body-content">
+                                    <!-- Full email content -->
+                                </div>
+                            </div>
+
+                            <!-- Explainable AI Insights -->
+                            <div id="modal-explanation" class="explanation-panel">
+                                <!-- Explanation Panel inserted here -->
+                            </div>
+                        </div>
+
+                        <!-- Contextual Insights removed -->
+
+                    </div>
+                </div>
+
+                <!-- Smart Actions Bar (Sticky Footer) -->
+                <div id="modal-smart-actions" class="action-bar-footer">
+                    <!-- Reclassify Menu (Hidden by default) -->
+                    <div id="reclassify-menu-popup" class="reclassify-menu">
+                        <button onclick="setNewPriority('High Priority')">
+                            <span class="dot dot-high"></span> Set Priority → High
+                        </button>
+                        <button onclick="setNewPriority('Medium Priority')">
+                            <span class="dot dot-medium"></span> Set Priority → Medium
+                        </button>
+                        <button onclick="setNewPriority('Low Priority')">
+                            <span class="dot dot-low"></span> Set Priority → Low
+                        </button>
+                    </div>
+
+                    <button class="smart-action-btn btn-reclassify" onclick="openReclassifyMenu(this, 1)">
+                        <span data-lucide="shuffle" class="icon-small"></span> Reclassify
+                    </button>
+                    <button class="smart-action-btn btn-snooze" onclick="handleSnooze(1)">
+                        <span data-lucide="clock" class="icon-small"></span> Snooze
+                    </button>
+                    <button class="smart-action-btn btn-reply" onclick="handleReply(1)">
+                        <span data-lucide="send" class="icon-small"></span> Reply
+                    </button>
+                    <button class="smart-action-btn btn-done" onclick="handleMarkDone(1)">
+                        <span data-lucide="check-circle" class="icon-small"></span> Mark Done
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- JavaScript for Data, Logic, and Screen Flow -->
+    <script>
+        // --- MOCK DATA (Enhanced with new fields) ---
+        const MOCK_EMAILS = [
+            { id: 1, subject: "Urgent: Final project report needed ASAP for review", sender: "CEO Office", full_content: "Team,\n\nI need the final project report submitted by 4 PM today. This is URGENT for the 5 PM board meeting. High consequence if missed.\n\nPlease click here to view the template: https://docs.company.com/report-template\n\nThanks,\nCEO", priority: "High Priority", action: "Reply Immediately", summary: "This email requests immediate submission for today’s 4 PM board meeting. Reply by 4 PM.", explain: "Priority reason: Detected urgency terms ('ASAP', 'URGENT', 'board meeting') + sender importance ('CEO').", related: ['Final report template', 'Board meeting agenda'], conflicts: 'Calendar conflict detected: Review session 3-4 PM.', arrival_time: Date.now() - (3 * 3600 * 1000) },
+            { id: 2, subject: "Weekly Check-in on Q3 Targets", sender: "Manager T", full_content: "Hey, could you send a quick status update on where you are with Q3 targets? No rush, just by end of day Friday.", priority: "Medium Priority", action: "Review & Respond", summary: "Status update on Q3 targets needed by end of day Friday.", explain: "Priority reason: Medium urgency detected due to 'Weekly' and 'no rush' combined with sender ('Manager T').", related: ['Q3 targets spreadsheet', 'Last week\'s status report'], conflicts: 'No conflicts found.', escalation_risk: 0.2, context: "Project_Apollo", schedule_mock: "Today" },
+            { id: 3, subject: "Office Lunch Invitation - Taco Tuesday!", sender: "Social Committee", full_content: "Join us this Tuesday for free tacos in the breakroom! RSVP if you're coming.", priority: "Low Priority", action: "Archive", summary: "Invitation to Taco Tuesday lunch.", explain: "Priority reason: Classified as promotional/social content.", related: [], conflicts: 'No conflicts found.', cleanup: "Recommend bulk archive." },
+            { id: 4, subject: "Critical: Server outage impacting client 321", sender: "IT Support", full_content: "ASAP! A critical server is down. Please escalate and call the on-call engineer immediately.", priority: "High Priority", action: "Join Meeting", summary: "Server outage affecting client 321 requires immediate escalation.", explain: "Priority reason: High severity terms ('Critical', 'ASAP') + Sender ('IT Support').", related: ['Server maintenance log', 'Client 321 service contract'], conflicts: 'No conflicts found.', arrival_time: Date.now() - (6 * 3600 * 1000) },
+            { id: 5, subject: "Review draft proposal before client presentation tomorrow", sender: "Colleague A", full_content: "I've finalized the draft for the client presentation. Can you take a look this afternoon and provide feedback?", priority: "Medium Priority", action: "Schedule Follow-up", summary: "Review presentation draft for tomorrow's client meeting.", explain: "Priority reason: Time sensitivity detected ('tomorrow') from a known collaborator.", related: ['Client presentation slides', 'Proposal budget details'], conflicts: 'No conflicts found.', escalation_risk: 0.7, context: "Project_Apollo", schedule_mock: "This Week" },
+            { id: 6, subject: "Company Newsletter - October Edition", sender: "Marketing", full_content: "Check out the latest product features on our blog! It's a great read!", priority: "Low Priority", action: "Archive", summary: "Latest company newsletter features.", explain: "Priority reason: Classified as bulk/marketing content.", related: ['Previous newsletters'], conflicts: 'No conflicts found.', cleanup: "Recommend unsubscribe." },
+        ];
+        
+        // State to track which email ID is currently open
+        let currentlyOpenEmailId = null;
+
+        // --- UTILITIES ---
+        function formatTimeAgo(timestamp) {
+            const seconds = Math.floor((Date.now() - timestamp) / 1000);
+            let interval = seconds / 31536000;
+            if (interval > 1) return Math.floor(interval) + " years ago";
+            interval = seconds / 2592000;
+            if (interval > 1) return Math.floor(interval) + " months ago";
+            interval = seconds / 86400;
+            if (interval > 1) return Math.floor(interval) + " days ago";
+            interval = seconds / 3600;
+            if (interval > 1) return Math.floor(interval) + " hours ago";
+            interval = seconds / 60;
+            if (interval > 1) return Math.floor(interval) + " minutes ago";
+            return Math.floor(seconds) + " seconds ago";
+        }
+
+        // --- DATA PROCESSING (Mocks Backend Logic) ---
+        function processEmailData(emails) {
+            return emails.map(email => {
+                let reminderText = "No Reminder Needed";
+                if (email.priority === "High Priority") {
+                    const now = new Date();
+                    now.setHours(now.getHours() + 2); 
+                    reminderText = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+                    reminderText = `Today, ${reminderText}`;
+                }
+                return { ...email, reminder: reminderText };
+            });
+        }
+        
+        // --- SCREEN FLOW FUNCTIONS ---
+        document.getElementById('login-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            document.getElementById('login-screen').style.display = 'none';
+            document.getElementById('dashboard-screen').style.display = 'block';
+            
+            const processedEmails = processEmailData(MOCK_EMAILS);
+            
+            // Calculate and display counts
+            const counts = {
+                All: processedEmails.length,
+                High: processedEmails.filter(e => e.priority === 'High Priority').length,
+                Medium: processedEmails.filter(e => e.priority === 'Medium Priority').length,
+                Low: processedEmails.filter(e => e.priority === 'Low Priority').length,
+            };
+            document.getElementById('count-All').textContent = `(${counts.All})`;
+            document.getElementById('count-High').textContent = `(${counts.High})`;
+            document.getElementById('count-Medium').textContent = `(${counts.Medium})`;
+            document.getElementById('count-Low').textContent = `(${counts.Low})`;
+            document.getElementById('email-count').textContent = counts.All;
+
+            renderDashboard(processedEmails);
+        });
+
+        // --- VIEW SWITCHER ---
+        let currentView = 'All';
+
+        function filterView(priority) {
+            currentView = priority;
+            const tabs = document.querySelectorAll('.nav-tab');
+            tabs.forEach(tab => tab.classList.remove('active'));
+            document.querySelector(`.nav-tab[data-priority="${priority}"]`).classList.add('active');
+
+            const processedEmails = processEmailData(MOCK_EMAILS);
+            renderDashboard(processedEmails);
+            lucide.createIcons();
+        }
+
+        // --- DYNAMIC ACTION HANDLERS ---
+        function handleMarkDone(cardId) {
+            const cardElement = document.querySelector(`.email-card[data-id="${cardId}"]`);
+            if (cardElement) {
+                cardElement.classList.add('fade-out');
+                setTimeout(() => {
+                    cardElement.remove();
+                    document.getElementById('email-modal').classList.remove('active');
+                    alert(`Email ID ${cardId} marked done and archived.`);
+                }, 500);
+            }
+        }
+        function handleReply(cardId) {
+            alert(`Opening quick-reply window for email ID ${cardId}. (Simulating new email draft)`);
+            document.getElementById('email-modal').classList.remove('active');
+        }
+        function handleSnooze(cardId) {
+            const snoozeTime = prompt("Snooze for how long? (e.g., 2 hours, tomorrow morning)");
+            if (snoozeTime) {
+                alert(`Email ID ${cardId} snoozed until ${snoozeTime}. Reminder scheduled.`);
+            }
+            document.getElementById('email-modal').classList.remove('active');
+        }
+
+        // Reclassify Logic
+        function openReclassifyMenu(buttonElement, cardId) {
+            // Close any existing menus
+            document.querySelectorAll('.reclassify-menu').forEach(menu => menu.style.display = 'none');
+            
+            const menu = document.getElementById('reclassify-menu-popup');
+            menu.style.display = 'block';
+            currentlyOpenEmailId = cardId; // Set state for the menu action
+        }
+        
+        function setNewPriority(newPriority) {
+            const cardId = currentlyOpenEmailId;
+            if (!cardId) return;
+
+            // 1. Log the action (Future ML learning step)
+            alert(`✅ Priority correction logged! Email ID ${cardId} changed to ${newPriority}. Model will learn.`);
+
+            // 2. Visually update the card
+            const cardElement = document.querySelector(`.email-card[data-id="${cardId}"]`);
+            if (cardElement) {
+                cardElement.setAttribute('data-priority', newPriority);
+                // Force re-render of the dashboard to update colors/sidebar
+                renderDashboard(processEmailData(MOCK_EMAILS));
+            }
+            
+            // 3. Close modal and menu
+            document.getElementById('email-modal').classList.remove('active');
+            document.getElementById('reclassify-menu-popup').style.display = 'none';
+        }
+
+        // Close reclassify menu if clicking anywhere else
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.btn-reclassify')) {
+                document.getElementById('reclassify-menu-popup').style.display = 'none';
+            }
+        });
+
+
+        // --- DASHBOARD RENDERER ---
+        function renderDashboard(processedEmails) {
+            const mainContent = document.getElementById('main-content');
+            const reminderList = document.getElementById('reminder-list');
+            
+            mainContent.innerHTML = '';
+            reminderList.innerHTML = '';
+
+            const highEmails = processedEmails.filter(e => e.priority === 'High Priority');
+            const mediumEmails = processedEmails.filter(e => e.priority === 'Medium Priority');
+            const lowEmails = processedEmails.filter(e => e.priority === 'Low Priority');
+            
+            // Render Sidebar (Always visible for High Priority)
+            reminderList.innerHTML = highEmails.length > 0 ? highEmails.map(generateReminderCard).join('') : "<p class='text-placeholder'>No urgent reminders set.</p>";
+            document.getElementById('high-priority-sidebar').style.display = (currentView === 'Insights' ? 'none' : 'block');
+            
+            // Main content rendering logic (Unified List View for all priority tabs)
+            let emailsToDisplay = [];
+            if (currentView === 'All') {
+                emailsToDisplay = processedEmails;
+            } else if (currentView === 'High') {
+                emailsToDisplay = highEmails;
+            } else if (currentView === 'Medium') {
+                emailsToDisplay = mediumEmails; 
+            } else if (currentView === 'Low') {
+                emailsToDisplay = lowEmails; 
+            } else if (currentView === 'Insights') {
+                mainContent.innerHTML = renderInsightsView();
+            }
+
+            if (emailsToDisplay.length > 0) {
+                 mainContent.innerHTML = generateEmailList(emailsToDisplay);
+            } else if (currentView !== 'Insights') {
+                 mainContent.innerHTML = '<p style="text-align:center; color: var(--color-text-muted); padding: 50px;">No emails found for this priority level.</p>';
+            }
+            
+            lucide.createIcons();
+        }
+        
+        // --- VIEW GENERATORS (Unified List) ---
+
+        function generateEmailList(emails) {
+            const cards = emails.map(email => {
+                let priorityColorClass, borderClass, iconName;
+                if (email.priority === "High Priority") {
+                    priorityColorClass = "priority-high";
+                    borderClass = "border-red";
+                    iconName = "alert-triangle";
+                } else if (email.priority === "Medium Priority") {
+                    priorityColorClass = "priority-medium";
+                    borderClass = "border-amber";
+                    iconName = "clock";
+                } else {
+                    priorityColorClass = "priority-low";
+                    borderClass = "border-emerald";
+                    iconName = "smile";
+                }
+
+                const isUrgent = email.priority === "High Priority" && email.arrival_time < (Date.now() - (4 * 3600 * 1000)); // Older than 4 hours
+                
+                return `
+                    <div class="email-card ${borderClass} ${isUrgent ? 'escalation-pulse' : ''}" 
+                        onclick="showEmailDetail(this)"
+                        data-id="${email.id}"
+                        data-subject="${email.subject}"
+                        data-sender="${email.sender}"
+                        data-priority="${email.priority}"
+                        data-action="${email.action}"
+                        data-body="${email.full_content.replace(/\n/g, '<br>')}"
+                        data-summary="${email.summary}"
+                        data-explain="${email.explain || ''}"
+                        data-related="${email.related ? email.related.join('|') : ''}"
+                        data-conflicts="${email.conflicts || ''}"
+                    >
+                        <div class="email-content-grid">
+                            <div class="priority-pill ${priorityColorClass}">
+                                <span data-lucide="${iconName}" class="icon-small"></span>
+                                ${email.priority.toUpperCase()}
+                            </div>
+                            <div class="subject-section">
+                                ${email.priority === "High Priority" ? `<p class="urgency-ribbon"><span data-lucide="zap" class="icon-xxsmall"></span> Unaddressed: ${formatTimeAgo(email.arrival_time)}</p>` : ''}
+                                <p class="text-sender">From: ${email.sender}</p>
+                                <p class="text-subject">${email.subject}</p>
+                                <p class="text-summary" style="color: var(--color-text-muted); font-style: italic;">[Summary]: ${email.summary}</p>
+                            </div>
+                            <div class="action-section">
+                                <p class="text-action">
+                                    <span data-lucide="send" class="icon-xsmall"></span>
+                                    ${email.action}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            return `<div class="email-list">${cards}</div>`;
+        }
+
+        function generateReminderCard(rem) {
+            return `
+                <div class="reminder-card" onclick="alert('Quick action on: ${rem.subject}')">
+                    <p class="reminder-subject">${rem.subject}</p>
+                    <p class="reminder-detail">Action: ${rem.action}</p>
+                    <p class="reminder-time">Due: ${rem.reminder}</p>
+                    <span class="explainability-tag">${rem.explain}</span>
+                </div>
+            `;
+        }
+        
+        function renderInsightsView() {
+             return `
+                <div class="aside-card" style="padding: 2rem;">
+                    <h2 class="aside-title"><span data-lucide="trending-up" class="icon-small"></span> Explainable AI Insights</h2>
+                    <p style="margin-bottom: 1rem;">This view would display model accuracy (88% F1 Score), sender activity heatmaps, and personalized priority learning rules.</p>
+                    <p style="font-style: italic; color: var(--color-medium-priority);">Note: The full charts and model data are handled by the Django backend and Plotly/Matplotlib libraries, not simple HTML/JS.</p>
+                </div>
+             `;
+        }
+
+        // --- MODAL FUNCTIONS (Enhanced for Explainable AI) ---
+
+        function showEmailDetail(element) {
+            const cardId = element.getAttribute('data-id');
+            const subject = element.getAttribute('data-subject');
+            const sender = element.getAttribute('data-sender');
+            const body = element.getAttribute('data-body');
+            const priorityText = element.getAttribute('data-priority');
+            const actionText = element.getAttribute('data-action');
+            const explainText = element.getAttribute('data-explain');
+            const summaryText = element.getAttribute('data-summary');
+            // Removed relatedText and conflictsText gathering
+
+            // Set the currently open ID for the action handlers
+            currentlyOpenEmailId = cardId;
+
+
+            let priorityColorClass = ''; 
+            if (priorityText === 'High Priority') priorityColorClass = 'var(--color-high-priority)';
+            else if (priorityText === 'Medium Priority') priorityColorClass = 'var(--color-medium-priority)';
+            else if (priorityText === 'Low Priority') priorityColorClass = 'var(--color-low-priority)';
+
+            // 1. HEADER & SENDER
+            document.getElementById('modal-subject').textContent = subject;
+            document.getElementById('modal-sender').textContent = 'From: ' + sender;
+            
+            // 2. AI SUMMARY BLOCK
+            document.getElementById('modal-ai-summary').innerHTML = `
+                <p style="font-weight: bold; color: var(--color-primary-accent);">AI Summary:</p>
+                ${summaryText}
+            `;
+
+            // 3. FULL BODY CONTENT
+            document.getElementById('modal-body').innerHTML = body;
+            
+            // 4. EXPLAINABILITY PANEL
+            document.getElementById('modal-explanation').innerHTML = `
+                <p style="color: var(--color-primary-light); font-weight: bold; margin-bottom: 5px;">AI Priority Reason:</p>
+                <p><strong>${priorityText}:</strong> ${explainText}</p>
+            `;
+
+            // 5. CONTEXTUAL INSIGHTS SIDEBAR REMOVED
+
+            // 6. SMART ACTIONS BAR (Updated to use dynamic ID and functions)
+            document.getElementById('modal-smart-actions').innerHTML = `
+                <!-- Reclassify Menu (Hidden by default) -->
+                <div id="reclassify-menu-popup" class="reclassify-menu">
+                    <button onclick="setNewPriority('High Priority')">
+                        <span class="dot dot-high"></span> Set Priority → High
+                    </button>
+                    <button onclick="setNewPriority('Medium Priority')">
+                        <span class="dot dot-medium"></span> Set Priority → Medium
+                    </button>
+                    <button onclick="setNewPriority('Low Priority')">
+                        <span class="dot dot-low"></span> Set Priority → Low
+                    </button>
+                </div>
+
+                <button class="smart-action-btn btn-reclassify" onclick="openReclassifyMenu(this, ${cardId})">
+                    <span data-lucide="shuffle" class="icon-small"></span> Reclassify
+                </button>
+                <button class="smart-action-btn btn-snooze" onclick="handleSnooze(${cardId})">
+                    <span data-lucide="clock" class="icon-small"></span> Snooze
+                </button>
+                <button class="smart-action-btn btn-reply" onclick="handleReply(${cardId})">
+                    <span data-lucide="send" class="icon-small"></span> Reply
+                </button>
+                <button class="smart-action-btn btn-done" onclick="handleMarkDone(${cardId})">
+                    <span data-lucide="check-circle" class="icon-small"></span> Mark Done
+                </button>
+            `;
+
+
+            // Show the modal with transition class
+            document.getElementById('email-modal').classList.add('active');
+            lucide.createIcons();
+        }
+
+        function closeModal(event) {
+            // Use classList.remove for transition effect
+            if (event.target.id === 'email-modal' || event.target.closest('.modal-close')) {
+                document.getElementById('email-modal').classList.remove('active');
+            }
+        }
+
+        window.onload = () => {
+             lucide.createIcons();
+        }
+        
+        // Initial dashboard load (after login simulation)
+        window.addEventListener('load', () => {
+            if (document.getElementById('dashboard-screen').style.display === 'block') {
+                 renderDashboard(processEmailData(MOCK_EMAILS));
+            }
+        });
+    </script>
+</body>
+</html>
